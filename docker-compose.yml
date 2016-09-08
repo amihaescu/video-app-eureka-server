@@ -1,0 +1,78 @@
+version: '2'
+services:
+ gateway:
+  image: zorag/video-app-gateway
+  environment:
+   eureka.server : 172.25.0.1:8761
+  networks:
+   - app-network
+
+ db-users:
+  image: postgres
+  environment:
+    POSTGRES_PASSWORD: application
+    POSTGRES_USER: application
+  ports:
+   - 5432:5432
+  networks:
+   app-network:
+    ipv4_address: 172.25.0.101
+
+ db-roles:
+  image: postgres
+  environment:
+    POSTGRES_PASSWORD: application
+    POSTGRES_USER: application
+  ports:
+   - 5433:5432
+  networks:
+   app-network:
+    ipv4_address: 172.25.0.102
+
+ db-comments:
+  image: postgres
+  environment:
+    POSTGRES_PASSWORD: application
+    POSTGRES_USER: application
+  ports:
+   - 5434:5432
+  networks:
+   app-network:
+    ipv4_address: 172.25.0.103
+
+ serivce-roles:
+  image: zorag/video-app-rolemicroservice
+  environment:
+   eureka.server: 172.25.0.1:8761
+   database.connection : 172.25.0.102:5432
+  networks:
+   - app-network
+  depends_on: 
+   - db-roles
+ 
+ service-users:
+  image: zorag/video-app-usermicroservice
+  environment:
+   eureka.server: 172.25.0.1:8761
+   database.connection: 172.25.0.101:5432
+  networks:
+   - app-network
+  depends_on:
+   - db-users
+
+ service-comments:
+  image: zorag/video-app-commentsservice
+  environment:
+   eureka.server: 172.25.0.1:8761
+   database.connection: 172.25.0.103:5432
+  networks:
+   - app-network
+  depends_on:
+   - db-comments
+
+networks:
+  app-network:
+   driver : bridge
+   ipam: 
+    config:
+    - subnet : 172.25.0.0/24
